@@ -1,0 +1,10 @@
+*.DS_Store
+*.pkl
+*.ipynb
+*.jpg
+*.csv
+
+data/
+pkl/
+models/
+__pycache__/
