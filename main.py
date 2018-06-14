@@ -1,13 +1,14 @@
 from functions import *
-import pandas as pd
-import pickle as pkl
+from gensim.models import Word2Vec
+from sklearn.ensemble import RandomForestRegressor as RF
+from sklearn.linear_model import LogisticRegression as LogReg
+from sklearn.linear_model import Perceptron as Perc
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-
-from sklearn.linear_model import LogisticRegression as LogReg
-from sklearn.naive_bayes import MultinomialNB as NB
-from sklearn.linear_model import Perceptron as Perc
 from sklearn.svm import LinearSVC as SVC
+import pandas as pd
+import pickle as pkl
+
 
 """
 1  feature extraction:
@@ -24,8 +25,8 @@ decision trees (forest)
 K-NN
 Neural Network
 
-
 """
+
 if __name__ == "__main__":
 
     with open('Tweets-airline-sentiment.csv', 'rb') as f:
@@ -47,9 +48,14 @@ if __name__ == "__main__":
         with open('pkl/dataset_lemma', 'rb') as f:
             dataset_lemma = pkl.load(f)
 
+    # just vectors
+ 
+    # X_train_l, X_test_l, y_train_l, y_test_l = train_test_split(dataset_lemma, dataset.airline_sentiment)
+    # X_train, X_test, y_train, y_test = train_test_split(dataset_text, dataset.airline_sentiment)
 
-    X_train_l, X_test_l, y_train_l, y_test_l = train_test_split(dataset_lemma, dataset.airline_sentiment)
-    X_train, X_test, y_train, y_test = train_test_split(dataset_text, dataset.airline_sentiment)
+    ys = LabelEncoder().fit_transform(dataset.airline_sentiment)
+    X_train, X_test, y_train, y_test = train_test_split(dataset_text, ys)
+    X_train_l, X_test_l, y_train_l, y_test_l = train_test_split(dataset_lemma, ys)
 
     results = {}
     all_max_features = [100, 500, 1000, 2000, 4000, 8000]
@@ -65,7 +71,9 @@ if __name__ == "__main__":
         X_test_ngrams_l = vectorize(vectorizers, X_test_l)
 
 
-        models = [LogReg(random_state=43), NB(), # no random state for NB
+
+
+        models = [LogReg(random_state=43), RF(random_state=44), 
             Perc(shuffle=True, random_state=45), SVC(random_state=46)]
         model_names = ['Logistic Regression', 'Naive Bayes', 'Perceptron', 'Linear SVM']
 
@@ -87,3 +95,49 @@ if __name__ == "__main__":
 
     with open('pkl/grid-search_results.pkl', 'wb') as f:
         pkl.dump(results, f)
+
+
+# word2vec
+
+    dataset_text_splited = split_dataset(dataset_text)
+    dataset_lemma_splited = split_dataset(dataset_lemma)
+
+    sizes = [100, 500, 1000, 2000, 4000, 8000]
+    for size in sizes:
+
+        dataset_text = dataset_text_splited
+        dataset_lemma = dataset_lemma_splited
+
+        model_text = Word2Vec(dataset_text, size=size, seed=43)
+        model_lemma = Word2Vec(dataset_lemma, size=size, seed=43)
+
+        dataset_text = dataset2vec(dataset_text, model_text, size)
+        dataset_lemma = dataset2vec(dataset_lemma, model_lemma, size)
+
+        ys = LabelEncoder().fit_transform(dataset.airline_sentiment)
+        X_train, X_test, y_train, y_test = train_test_split(dataset_text, ys)
+        X_train_l, X_test_l, y_train_l, y_test_l = train_test_split(dataset_lemma, ys)
+
+        results = {}
+
+        models = [LogReg(random_state=43), RF(random_state=44),
+            Perc(shuffle=True, random_state=45), SVC(random_state=46)]
+        model_names = ['Logistic Regression', 'Random Forest', 'Perceptron', 'Linear SVM']
+        print(X_train[0])
+        print(X_train[4].shape)
+        for model, model_name in zip(models, model_names):
+            print('Computing: {}'.format(model_name))
+            print('no lemmatization')
+            model.fit(X_train, y_train)
+            score = model.score(X_test, y_test)
+            results[model_name + '_nl_' + str(size)] = score
+            print('Accuracy for test set: ', score)
+
+            print('with lematization')
+            model.fit(X_train, y_train)
+            score = model.score(X_test, y_test)
+            results[model_name + '_wl_' + str(size)] = score
+            print('Accuracy for test set: ', score)
+
+with open('pkl/grid-search_results_word2vec.pkl', 'wb') as f:
+    pkl.dump(results, f)

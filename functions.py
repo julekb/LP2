@@ -51,6 +51,7 @@ def lemmatization(dataset):
         new_dataset = np.append(new_dataset, list([new_sent]))
     return new_dataset
 
+
 if __name__ == "__main__":
 
     with open('Tweets-airline-sentiment.csv', 'rb') as f:
@@ -87,3 +88,42 @@ def encode_ys(ys_num):
     ys_num = LabelEncoder().fit_transform(ys_num)
     ys_num = LabelBinarizer().fit_transform(ys_num)
     return ys_num
+
+
+def split_dataset(dataset):
+    new_dataset = []
+    for sent in dataset:
+        new_dataset.append(sent.split(' '))
+    return new_dataset
+
+
+def sent2vec(sent, model, size=100):
+    vec = np.zeros(size)
+    for word in sent:
+        try:
+            vec += model.wv[word]
+        except KeyError:
+            continue
+    return vec
+
+
+def dataset2vec(dataset, model, size=100):
+    new_dataset = []
+    for sent in dataset:
+        new_dataset.append(sent2vec(sent, model, size))
+    return new_dataset
+
+
+def print_for_latex(results, sizes, models):
+    """
+    function for printing results in a appropiate form for latex table
+    """
+    for model in models:
+        for t in ['nl', 'wl']:
+            line = model + ' ' + t.upper()
+            for size in sizes:
+                key = model + '_' + t + '_' + str(size)
+                line +=  ' & ' + str(round(results[key], 4))
+            line += ' \\\hline'
+            print(line)
+            
