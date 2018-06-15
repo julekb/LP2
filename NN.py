@@ -83,7 +83,7 @@ if __name__ == '__main__':
     make_keras_picklable()
 
     grid, histories = [], []
-    sizes = [100, 500, 1000, 2000]
+    sizes = [100, 500, 1000]
 
     for size in sizes:
 

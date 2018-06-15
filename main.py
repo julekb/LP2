@@ -10,23 +10,6 @@ import pandas as pd
 import pickle as pkl
 
 
-"""
-1  feature extraction:
-
-compare unigrams, bigrams, word embeddings
-get rid of first n most frequent features
-find features that correlate the moest / semi-cross corelation
-for one sentence binary or if exist (i.e. for NN ???)
-
-2. categorization
-
-Logistc Regression,
-decision trees (forest)
-K-NN
-Neural Network
-
-"""
-
 if __name__ == "__main__":
 
     with open('Tweets-airline-sentiment.csv', 'rb') as f:
@@ -80,33 +63,35 @@ if __name__ == "__main__":
             Perc(shuffle=True, random_state=45), SVC(random_state=46)]
         model_names = ['Logistic Regression', 'Random Forest', 'Perceptron', 'Linear SVM']
 
-
         for model, model_name in zip(models, model_names):
             print('Computing: {}'.format(model_name))
             for i in range(3):
                 print('no lemmatization')
                 model.fit(X_train_ngrams[i], y_train)
                 score = model.score(X_test_ngrams[i], y_test)
-                results[model_name + '_nl_' + str(max_features)] = score
+                results[model_name + '_nl_' + str(max_features) + ['uni', 'bi', 'unibi'][i]] = score
                 print('Accuracy for test set: ', score)
 
                 print('with lematization')
                 model.fit(X_train_ngrams_l[i], y_train)
                 score = model.score(X_test_ngrams_l[i], y_test)
-                results[model_name + '_wl_' + str(max_features)] = score
+                results[model_name + '_wl_' + str(max_features) + ['uni', 'bi', 'unibi'][i]] = score
                 print('Accuracy for test set: ', score)
 
-    with open('pkl/grid-search_results.pkl', 'wb') as f:
+    with open('pkl/grid-search_results_uni_bi.pkl', 'wb') as f:
         pkl.dump(results, f)
 
 
 # word2vec
+
     print('##########################')
     print('######## word2vec ########')
     print('##########################')
 
     dataset_text_splited = split_dataset(dataset_text)
     dataset_lemma_splited = split_dataset(dataset_lemma)
+
+    results = {}
 
     sizes = [100, 500, 1000, 2000, 4000]
     for size in sizes:
@@ -128,25 +113,27 @@ if __name__ == "__main__":
         X_train_l, X_test_l, y_train_l, y_test_l = train_test_split(
             dataset_lemma, ys, test_size=0.1)
 
-        results = {}
-
-        models = [LogReg(random_state=43), RF(random_state=44),
+        # models = [LogReg(random_state=43), RF(random_state=44),
+        #     Perc(shuffle=True, random_state=45), SVC(random_state=46)]
+        models = [LogReg(random_state=43),
             Perc(shuffle=True, random_state=45), SVC(random_state=46)]
-        model_names = ['Logistic Regression', 'Random Forest', 'Perceptron', 'Linear SVM']
+        # model_names = ['Logistic Regression', 'Random Forest', 'Perceptron', 'Linear SVM']
+        model_names = ['Logistic Regression', 'Perceptron', 'Linear SVM']
 
         for model, model_name in zip(models, model_names):
             print('Computing: {}'.format(model_name))
             print('no lemmatization')
             model.fit(X_train, y_train)
             score = model.score(X_test, y_test)
+            print(size)
             results[model_name + '_nl_' + str(size)] = score
             print('Accuracy for test set: ', score)
 
             print('with lematization')
-            model.fit(X_train, y_train)
-            score = model.score(X_test, y_test)
+            model.fit(X_train_l, y_train)
+            score = model.score(X_test_l, y_test)
             results[model_name + '_wl_' + str(size)] = score
             print('Accuracy for test set: ', score)
 
-with open('pkl/grid-search_results_word2vec.pkl', 'wb') as f:
-    pkl.dump(results, f)
+    with open('pkl/grid-search_results_word2vec.pkl', 'wb') as f:
+        pkl.dump(results, f)

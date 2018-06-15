@@ -1,13 +1,13 @@
-import numpy as np
-import pandas as pd
-from string import punctuation
 from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.pipeline import FeatureUnion
 from sklearn.preprocessing import LabelEncoder, LabelBinarizer
-import tempfile
+from string import punctuation
 import keras
+import numpy as np
+import pandas as pd
 import pickle as pkl
+import tempfile
 
 
 def strip_punctuation(s, punctuation=punctuation):
@@ -63,8 +63,10 @@ if __name__ == "__main__":
 
 def get_ngram_vectorizers(X_train, max_features=1000):
 
-    unigram_vectorizer = CountVectorizer(binary=True,max_features=max_features).fit(X_train)
-    bigram_vectorizer = CountVectorizer(ngram_range=(2,2),binary=True, max_features=max_features).fit(X_train)
+    unigram_vectorizer = CountVectorizer(binary=True,
+        max_features=max_features).fit(X_train)
+    bigram_vectorizer = CountVectorizer(ngram_range=(2, 2),
+        binary=True, max_features=max_features).fit(X_train)
 
     super_vectorizer = FeatureUnion([
         ('unigram', unigram_vectorizer),
