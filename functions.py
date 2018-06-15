@@ -5,6 +5,9 @@ from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.pipeline import FeatureUnion
 from sklearn.preprocessing import LabelEncoder, LabelBinarizer
+import tempfile
+import keras
+import pickle as pkl
 
 
 def strip_punctuation(s, punctuation=punctuation):
@@ -26,12 +29,6 @@ def preprocess_set(data, lemmatize=False):
             Xs[i][j] = strip_punctuation(Xs[i][j])
 
     return [' '.join(X) for X in Xs]
-
-
-def vectorize(data, vectorizer):
-    for i, X in enumerate(data):
-        data[i] = vectorizer.transform(X).toarray()
-    return data
 
 
 def NN(X_train, X_test, y_train, y_test):
@@ -66,7 +63,7 @@ if __name__ == "__main__":
 
 def get_ngram_vectorizers(X_train, max_features=1000):
 
-    unigram_vectorizer = CountVectorizer(binary=True, max_features=max_features).fit(X_train)
+    unigram_vectorizer = CountVectorizer(binary=True,max_features=max_features).fit(X_train)
     bigram_vectorizer = CountVectorizer(ngram_range=(2,2),binary=True, max_features=max_features).fit(X_train)
 
     super_vectorizer = FeatureUnion([
@@ -99,11 +96,14 @@ def split_dataset(dataset):
 
 def sent2vec(sent, model, size=100):
     vec = np.zeros(size)
+    word_num = len(sent)
     for word in sent:
         try:
             vec += model.wv[word]
         except KeyError:
-            continue
+            word_num -= 1
+    if word_num != 0:
+        return vec / word_num
     return vec
 
 
@@ -123,7 +123,41 @@ def print_for_latex(results, sizes, models):
             line = model + ' ' + t.upper()
             for size in sizes:
                 key = model + '_' + t + '_' + str(size)
-                line +=  ' & ' + str(round(results[key], 4))
+                line += ' & ' + str(round(results[key], 4))
             line += ' \\\hline'
             print(line)
-            
+
+
+def make_keras_picklable():
+    """ source: http://zachmoshe.com/2017/04/03/pickling-keras-models.html"""
+
+    def __getstate__(self):
+        model_str = ""
+        with tempfile.NamedTemporaryFile(suffix='.hdf5', delete=True) as fd:
+            keras.models.save_model(self, fd.name, overwrite=True)
+            model_str = fd.read()
+        d = {'model_str': model_str}
+        return d
+
+    def __setstate__(self, state):
+        with tempfile.NamedTemporaryFile(suffix='.hdf5', delete=True) as fd:
+            fd.write(state['model_str'])
+            fd.flush()
+            model = keras.models.load_model(fd.name)
+        self.__dict__ = model.__dict__
+
+    cls = keras.models.Model
+    cls.__getstate__ = __getstate__
+    cls.__setstate__ = __setstate__
+
+
+def save(object, path):
+    with open('pkl/' + path + '.pkl', 'wb') as f:
+        pkl.dump(object, f)
+    return
+
+
+def load(path):
+
+    with open('pkl/' + path + '.pkl', 'rb') as f:
+        return pkl.load(f)

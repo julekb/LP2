@@ -49,18 +49,23 @@ if __name__ == "__main__":
             dataset_lemma = pkl.load(f)
 
     # just vectors
- 
-    # X_train_l, X_test_l, y_train_l, y_test_l = train_test_split(dataset_lemma, dataset.airline_sentiment)
-    # X_train, X_test, y_train, y_test = train_test_split(dataset_text, dataset.airline_sentiment)
+
+    print('##########################')
+    print('######## vectors #########')
+    print('##########################')
 
     ys = LabelEncoder().fit_transform(dataset.airline_sentiment)
-    X_train, X_test, y_train, y_test = train_test_split(dataset_text, ys)
-    X_train_l, X_test_l, y_train_l, y_test_l = train_test_split(dataset_lemma, ys)
+    X_train, X_test, y_train, y_test = train_test_split(
+        dataset_text, ys, test_size=0.1)
+    X_train_l, X_test_l, y_train_l, y_test_l = train_test_split(
+        dataset_lemma, ys, test_size=0.1)
 
     results = {}
-    all_max_features = [100, 500, 1000, 2000, 4000, 8000]
+    all_max_features = [100, 500, 1000, 2000, 4000]
 
     for max_features in all_max_features:
+
+        print('Computing for {} max features'.format(max_features))
 
         vectorizers = get_ngram_vectorizers(X_train, max_features)
         X_train_ngrams = vectorize(vectorizers, X_train)
@@ -71,11 +76,9 @@ if __name__ == "__main__":
         X_test_ngrams_l = vectorize(vectorizers, X_test_l)
 
 
-
-
-        models = [LogReg(random_state=43), RF(random_state=44), 
+        models = [LogReg(random_state=43), RF(random_state=44),
             Perc(shuffle=True, random_state=45), SVC(random_state=46)]
-        model_names = ['Logistic Regression', 'Naive Bayes', 'Perceptron', 'Linear SVM']
+        model_names = ['Logistic Regression', 'Random Forest', 'Perceptron', 'Linear SVM']
 
 
         for model, model_name in zip(models, model_names):
@@ -98,12 +101,17 @@ if __name__ == "__main__":
 
 
 # word2vec
+    print('##########################')
+    print('######## word2vec ########')
+    print('##########################')
 
     dataset_text_splited = split_dataset(dataset_text)
     dataset_lemma_splited = split_dataset(dataset_lemma)
 
-    sizes = [100, 500, 1000, 2000, 4000, 8000]
+    sizes = [100, 500, 1000, 2000, 4000]
     for size in sizes:
+
+        print('Computing for {} size'.format(size))
 
         dataset_text = dataset_text_splited
         dataset_lemma = dataset_lemma_splited
@@ -115,16 +123,17 @@ if __name__ == "__main__":
         dataset_lemma = dataset2vec(dataset_lemma, model_lemma, size)
 
         ys = LabelEncoder().fit_transform(dataset.airline_sentiment)
-        X_train, X_test, y_train, y_test = train_test_split(dataset_text, ys)
-        X_train_l, X_test_l, y_train_l, y_test_l = train_test_split(dataset_lemma, ys)
+        X_train, X_test, y_train, y_test = train_test_split(
+            dataset_text, ys, test_size=0.1)
+        X_train_l, X_test_l, y_train_l, y_test_l = train_test_split(
+            dataset_lemma, ys, test_size=0.1)
 
         results = {}
 
         models = [LogReg(random_state=43), RF(random_state=44),
             Perc(shuffle=True, random_state=45), SVC(random_state=46)]
         model_names = ['Logistic Regression', 'Random Forest', 'Perceptron', 'Linear SVM']
-        print(X_train[0])
-        print(X_train[4].shape)
+
         for model, model_name in zip(models, model_names):
             print('Computing: {}'.format(model_name))
             print('no lemmatization')
